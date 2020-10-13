@@ -3,21 +3,22 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <sys/select.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <errno.h>
-#include <sys/types.h>
 #include <pwd.h>
 
+// numerical definitions
 #define VERSION 1.0
 #define MAXNAME 256
+// buttons
+#define HANGUP 17 // ctrl+q
+#define QUIT 24 // ctrl+x
 
 // constants and global variables
 enum FILEOPERATIONTYPES { READ=0, WRITE };
 const char *switchpositions[]={ "off", "on" };
-const char *defaultserialportsettings[]={ "/dev/tnt1 serial device", "57600 baud rate", "8N1 read/stop bits, parity", "on hardware flow control", "off software flow control" }; // device, speed, readstopparity, hardware flow control, software flow control
+const char *defaultserialportsettings[]={ "/dev/tnt1 serial device", "57600 baud rate", "8N1 read/stop bits, parity", "on hardware flow control", "off software flow control" };
 char serialportsettings[5][MAXNAME];
 struct termios options;
 
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
    tcgetattr( STDIN_FILENO, &options); // read current options
    options.c_lflag &= ~ICANON; // disable canonical line oriented input
    options.c_lflag &= ~ECHOCTL; // do not echo control chars as ^char, delete as ~?
-   tcsetattr( STDIN_FILENO, TCSANOW, &options); // write back to stdin
+   tcsetattr( STDIN_FILENO, TCSANOW, &options ); // write back to stdin
    // serial port handlers
    if ((serial_port=open(serialportsettings[0], O_RDWR | O_NOCTTY | O_NDELAY))==-1) {
      printf("unable to open serial port %s\n", serialportsettings[0]);
@@ -88,8 +89,11 @@ int main(int argc, char *argv[])
         nread=read(STDIN_FILENO, &c, 1);
         if (c==127) // remap DEL to BACKSPACE
          c=8;
-        if (c==17) { // ctrl+q to hangup
+        if (c==HANGUP) {
          write(serial_port, "+++", 3);
+        continue; }
+        if (c==QUIT) {
+         operation=0;
         continue; }
         if (c=='\n')
          write(serial_port, "\r", 1); // add carriage return before newline
@@ -103,7 +107,7 @@ int main(int argc, char *argv[])
          if (bufptr[-1] == '\n' || bufptr[-1] == '\r')
         break; }
         *bufptr = '\0';
-        if (!strcmp(buffer, "\r\nOK\r\n") && c==17) // finish hang up
+        if ( ((!strcmp(buffer, "\r\nOK\r\n") || (!strcmp(buffer, "OK\r\n")))) && c==HANGUP) // finish hang up
          write(serial_port, "ath0\r\n", 6);
         printf("%s", buffer); 
        }
