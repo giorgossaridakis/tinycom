@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
    // arrange file descriptors set
    FD_ZERO(&set); // zero the set
    FD_SET(STDIN_FILENO, &set); // add stdin
-   FD_SET(serial_port, &set); // add serial prot
+   FD_SET(serial_port, &set); // add serial port
    fd_hwm = serial_port; // raise highest fd value
    
    printf("tinycom v%.1f, port settings --> ", VERSION);
