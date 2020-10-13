@@ -14,6 +14,8 @@
 // buttons
 #define HANGUP 17 // ctrl+q
 #define QUIT 24 // ctrl+x
+#define DELETE 127
+#define BACKSPACE 8
 
 // constants and global variables
 enum FILEOPERATIONTYPES { READ=0, WRITE };
@@ -87,16 +89,22 @@ int main(int argc, char *argv[])
       if (FD_ISSET(fd, &read_set)) {
        if (fd==STDIN_FILENO) { // read from keyboard
         nread=read(STDIN_FILENO, &c, 1);
-        if (c==127) // remap DEL to BACKSPACE
-         c=8;
-        if (c==HANGUP) {
-         write(serial_port, "+++", 3);
-        continue; }
-        if (c==QUIT) {
-         operation=0;
-        continue; }
-        if (c=='\n')
-         write(serial_port, "\r", 1); // add carriage return before newline
+        // check for control buttons
+        switch (c) {
+         case HANGUP:
+          write(serial_port, "+++", 3);
+          continue;
+         break;
+         case QUIT:
+          operation=0;
+          continue;
+         break;
+         case DELETE:
+          c=BACKSPACE;
+         break;
+         case '\n':
+          write(serial_port, "\r", 1); // add carriage return before newline
+        break; }
         write(serial_port, &c, 1);
        }
        if (fd==serial_port) { // read from serial port
@@ -112,7 +120,7 @@ int main(int argc, char *argv[])
         printf("%s", buffer); 
        }
       }
-      usleep(150); // avoid busywait
+      usleep(150); // do not overtire the CPU
       
      }
 
