@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
         printf("%s", buffer); 
        }
       }
-      usleep(150); // do not overtire the CPU
+      usleep(150); // avoid busywait
       
      }
 
